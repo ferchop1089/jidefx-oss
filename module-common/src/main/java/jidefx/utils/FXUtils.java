@@ -20,7 +20,8 @@
  */
 package jidefx.utils;
 
-import com.sun.javafx.Utils;
+import com.sun.javafx.util.Utils;
+import java.util.List;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
@@ -29,8 +30,6 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.SkinBase;
 import javafx.stage.Screen;
-
-import java.util.List;
 
 /**
  * Utils that contains methods that depend on JavaFX classes.

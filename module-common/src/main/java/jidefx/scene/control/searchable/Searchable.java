@@ -20,6 +20,13 @@
  */
 package jidefx.scene.control.searchable;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -45,66 +52,65 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 import jidefx.utils.WildcardSupport;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
 /**
- * In JavaFX, ListView, TableView, TreeView, ComboBox, ChoiceBox, TextArea are six data-rich controls. They can be used
- * to display a huge amount of data so a convenient searching feature is essential in those controls.
+ * In JavaFX, ListView, TableView, TreeView, ComboBox, ChoiceBox, TextArea are six data-rich
+ * controls. They can be used to display a huge amount of data so a convenient searching feature is
+ * essential in those controls.
  * <p>
- * The Searchable feature is to that user can type a character, the control will find the first entry that matches with
- * the character. Searchable is such a class that makes it possible. An end user can simply type any string they want to
- * search for and use arrow keys to navigate to the next or previous occurrence. See below for the list of controls that
- * support searchable.
+ * The Searchable feature is to that user can type a character, the control will find the first
+ * entry that matches with the character. Searchable is such a class that makes it possible. An end
+ * user can simply type any string they want to search for and use arrow keys to navigate to the
+ * next or previous occurrence. See below for the list of controls that support searchable.
  * <p>
- * The main purpose of searchable is to make the searching for a particular string easier in a control having a lot of
- * information. All features are related to how to make it quicker and easier to identify the matching text.
+ * The main purpose of searchable is to make the searching for a particular string easier in a
+ * control having a lot of information. All features are related to how to make it quicker and
+ * easier to identify the matching text.
  * <p>
- * Navigation feature - After user types in a text and presses the up or down arrow keys, only items that match with the
- * typed text will be selected. User can press the up and down keys to quickly look at what those items are. In
- * addition, end users can use the home key in order to navigate to the first occurrence. Likewise, the end key will
- * navigate to the last occurrence. The navigation keys are fully customizable. The next section will explain how to
- * customize them.
+ * Navigation feature - After user types in a text and presses the up or down arrow keys, only items
+ * that match with the typed text will be selected. User can press the up and down keys to quickly
+ * look at what those items are. In addition, end users can use the home key in order to navigate to
+ * the first occurrence. Likewise, the end key will navigate to the last occurrence. The navigation
+ * keys are fully customizable. The next section will explain how to customize them.
  * <p>
- * Multiple selection feature - If you press and hold CTRL key while pressing up and down arrow, it will find
- * next/previous occurrence while keeping existing selections. See the screenshot below. This way one can easily find
- * several occurrences and apply an action to all of them later.
+ * Multiple selection feature - If you press and hold CTRL key while pressing up and down arrow, it
+ * will find next/previous occurrence while keeping existing selections. See the screenshot below.
+ * This way one can easily find several occurrences and apply an action to all of them later.
  * <p>
- * Select all feature ? Further extending the multiple selections feature, you can even select all. If you type in a
- * searching text and press CTRL+A, all the occurrences matching the searching text will be selected. This is a very
- * handy feature. For example, you want to delete all rows in a table whose "name" column begins with "old". You can
- * type in "old" and press CTRL+A, now all rows beginning with "old" will be selected. If you hook up delete key with
- * the table, pressing delete key will delete all selected rows. Imagine without this searchable feature, users will
- * have to hold CTRL key, look through each row, and click on the row they want to delete. In case they forgot to hold
- * tight the CTRL key while clicking, they have to start over again.
+ * Select all feature ? Further extending the multiple selections feature, you can even select all.
+ * If you type in a searching text and press CTRL+A, all the occurrences matching the searching text
+ * will be selected. This is a very handy feature. For example, you want to delete all rows in a
+ * table whose "name" column begins with "old". You can type in "old" and press CTRL+A, now all rows
+ * beginning with "old" will be selected. If you hook up delete key with the table, pressing delete
+ * key will delete all selected rows. Imagine without this searchable feature, users will have to
+ * hold CTRL key, look through each row, and click on the row they want to delete. In case they
+ * forgot to hold tight the CTRL key while clicking, they have to start over again.
  * <p>
- * Basic regular expression support - It allows '?' to match any character and '*' to match any number of characters.
- * For example "a*c" will match "ac", "abc", "abbbc", or even "a b c" etc. "a?c" will only match "abc" or "a c".
+ * Basic regular expression support - It allows '?' to match any character and '*' to match any
+ * number of characters. For example "a*c" will match "ac", "abc", "abbbc", or even "a b c" etc.
+ * "a?c" will only match "abc" or "a c".
  * <p>
- * Recursive search (only in TreeViewSearchable) ? In the case of TreeSearchable, there is an option called recursive.
- * You can call TreeViewSearchable#setRecursive(true/false) to change it. If TreeViewSearchable is recursive, it will
- * search all tree nodes including those, which are not visible to find the matching node. Obviously, if your tree has
- * unlimited number of tree nodes or a potential huge number of tree nodes (such as a tree to represent file system),
- * the recursive attribute should be false. To avoid this potential problem in this case, we default it to false.
+ * Recursive search (only in TreeViewSearchable) ? In the case of TreeSearchable, there is an option
+ * called recursive. You can call TreeViewSearchable#setRecursive(true/false) to change it. If
+ * TreeViewSearchable is recursive, it will search all tree nodes including those, which are not
+ * visible to find the matching node. Obviously, if your tree has unlimited number of tree nodes or
+ * a potential huge number of tree nodes (such as a tree to represent file system), the recursive
+ * attribute should be false. To avoid this potential problem in this case, we default it to false.
  * <p>
- * Popup position ? the search popup position can be customized using setPopupPosition method using the JavaFX Pos. We
- * currently only support TOP_XXX and BOTTOM_XXX total six positions. Furthermore, you can use
- * setPopupPositionRelativeTo method to specify a Node which will be used to determine which Node the Pos is relative
- * to.
+ * Popup position ? the search popup position can be customized using setPopupPosition method using
+ * the JavaFX Pos. We currently only support TOP_XXX and BOTTOM_XXX total six positions.
+ * Furthermore, you can use setPopupPositionRelativeTo method to specify a Node which will be used
+ * to determine which Node the Pos is relative to.
  * <p>
  * Please refer to the JideFX Common Layer Developer Guide for more information.
- *
+ * <p>
  * @param <T> the element type in the control.
  */
 @SuppressWarnings({"Convert2Lambda", "Anonymous2MethodRef"})
 public abstract class Searchable<T> {
+
     protected final Node _node;
     private SearchPopup _popup;
 
@@ -146,10 +152,24 @@ public abstract class Searchable<T> {
     // UI options
     private StringProperty _searchingLabelProperty;
 
+    // Converter
+    private StringConverter<T> converter;
+    private final StringConverter<T> CONVERTER_DEFAULT = new StringConverter<T>() {
+
+        @Override
+        public String toString(T object) {
+            return object != null ? object.toString() : "";
+        }
+
+        @Override
+        public T fromString(String string) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    };
 
     /**
-     * The client property for Searchable instance. When Searchable is installed on a control, this client property has
-     * the Searchable.
+     * The client property for Searchable instance. When Searchable is installed on a control, this
+     * client property has the Searchable.
      */
     public static final String PROPERTY_SEARCHABLE = "Searchable"; //NON-NLS
 
@@ -159,7 +179,7 @@ public abstract class Searchable<T> {
 
     /**
      * Creates a Searchable.
-     *
+     * <p>
      * @param node node where the Searchable will be installed.
      */
     public Searchable(Node node) {
@@ -170,68 +190,78 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Gets the selected index in the control. The concrete implementation should call methods on the control to
-     * retrieve the current selected index. If the control supports multiple selection, it's OK just return the index of
-     * the first selection. <p>Here are some examples. In the case of ListView, the index is the row index. In the case
-     * of TreeView, the index is the row index too. In the case of TableView, depending on the selection mode, the index
-     * could be row index (in row selection mode), or could be the cell index (in cell selection mode).
-     *
+     * Gets the selected index in the control. The concrete implementation should call methods on
+     * the control to retrieve the current selected index. If the control supports multiple
+     * selection, it's OK just return the index of the first selection.
+     * <p>
+     * Here are some examples. In the case of ListView, the index is the row index. In the case of
+     * TreeView, the index is the row index too. In the case of TableView, depending on the
+     * selection mode, the index could be row index (in row selection mode), or could be the cell
+     * index (in cell selection mode).
+     * <p>
      * @return the selected index.
      */
     protected abstract int getSelectedIndex();
 
     /**
-     * Sets the selected index. The concrete implementation should call methods on the control to select the element at
-     * the specified index. The incremental flag is used to do multiple select. If the flag is true, the element at the
-     * index should be added to current selection. If false, you should clear previous selection and then select the
-     * element.
-     *
+     * Sets the selected index. The concrete implementation should call methods on the control to
+     * select the element at the specified index. The incremental flag is used to do multiple
+     * select. If the flag is true, the element at the index should be added to current selection.
+     * If false, you should clear previous selection and then select the element.
+     * <p>
      * @param index       the index to be selected
-     * @param incremental a flag to enable multiple selection. If the flag is true, the element at the index should be
-     *                    added to current selection. If false, you should clear previous selection and then select the
-     *                    element.
+     * @param incremental a flag to enable multiple selection. If the flag is true, the element at
+     *                    the index should be added to current selection. If false, you should clear
+     *                    previous selection and then select the element.
      */
     protected abstract void setSelectedIndex(int index, boolean incremental);
 
     /**
-     * Sets the selected index. The reason we have this method is just for back compatibility. All the method do is just
-     * to invoke {@link #setSelectedIndex(int, boolean)}.
+     * Sets the selected index. The reason we have this method is just for back compatibility. All
+     * the method do is just to invoke {@link #setSelectedIndex(int, boolean)}.
      * <p>
-     * Please do NOT try to override this method. Always override {@link #setSelectedIndex(int, boolean)} instead.
-     *
+     * Please do NOT try to override this method. Always override
+     * {@link #setSelectedIndex(int, boolean)} instead.
+     * <p>
      * @param index       the index to be selected
-     * @param incremental a flag to enable multiple selection. If the flag is true, the element at the index should be
-     *                    added to current selection. If false, you should clear previous selection and then select the
-     *                    element.
+     * @param incremental a flag to enable multiple selection. If the flag is true, the element at
+     *                    the index should be added to current selection. If false, you should clear
+     *                    previous selection and then select the element.
      */
     public void adjustSelectedIndex(int index, boolean incremental) {
         setSelectedIndex(index, incremental);
     }
 
     /**
-     * Gets the total element count in the control. Different concrete implementation could have different
-     * interpretation of the count. This is totally OK as long as it's consistent in all the methods. For example, the
-     * index parameter in other methods should be always a valid value within the total count.
-     *
+     * Gets the total element count in the control. Different concrete implementation could have
+     * different interpretation of the count. This is totally OK as long as it's consistent in all
+     * the methods. For example, the index parameter in other methods should be always a valid value
+     * within the total count.
+     * <p>
      * @return the total element count.
      */
     protected abstract int getElementCount();
 
     /**
-     * Gets the element at the specified index. The element could be any data structure that internally used in the
-     * control. The convertElementToString method will give you a chance to convert the element to string which is used
-     * to compare with the string that user types in.
-     *
+     * Gets the element at the specified index. The element could be any data structure that
+     * internally used in the control. The applyConverter method will give you a chance to
+     * convert the element to string which is used to compare with the string that user types in.
+     * <p>
      * @param index the index
+     * <p>
      * @return the element at the specified index.
      */
     protected abstract T getElementAt(int index);
 
     /**
      * Converts the element that returns from getElementAt() to string.
-     *
+     * <p>
      * @param element the element to be converted
+     * <p>
      * @return the string representing the element in the control.
+     * <p>
+     * @deprecated en su lugar utilizar {@link Searchable#setConverter(javafx.util.StringConverter)
+     * setConverter}
      */
     protected abstract String convertElementToString(T element);
 
@@ -241,15 +271,13 @@ public abstract class Searchable<T> {
             setSelectedIndex(index, incremental);
             Searchable.this.setCursor(index, incremental);
             updateText(getTypedText());
-        }
-        else {
+        } else {
             updateText(getTypedText() + " " + getResourceString("Searchable.noMatch"));
         }
         if (index != -1) {
             setMatchingElement(getElementAt(index));
             setMatchingIndex(index);
-        }
-        else {
+        } else {
             setMatchingElement(null);
             setMatchingIndex(-1);
         }
@@ -278,8 +306,8 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Installs necessary listeners to the control. This method will be called automatically when Searchable is
-     * created.
+     * Installs necessary listeners to the control. This method will be called automatically when
+     * Searchable is created.
      */
     public void installListeners() {
         if (_visibleListener == null) {
@@ -317,8 +345,8 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Uninstall the listeners that installed before. You can call this method if you decide to make the existing
-     * searchable control not searchable.
+     * Uninstall the listeners that installed before. You can call this method if you decide to make
+     * the existing searchable control not searchable.
      */
     public void uninstallListeners() {
         if (_visibleListener != null) {
@@ -340,22 +368,25 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the element matches the searching text.
-     *
+     * <p>
      * @param element       the element to be checked
      * @param searchingText the searching text
+     * <p>
      * @return true if matches.
      */
     protected boolean compare(T element, String searchingText) {
-        String text = convertElementToString(element);
+        String text = applyConverter(element);
         return text != null && compareAsString(isCaseSensitive() ? text : text.toLowerCase(), searchingText);
     }
 
     /**
-     * Checks if the element string matches the searching text. Different from {@link #compare(Object, String)}, this
-     * method is after the element has been converted to string using {@link #convertElementToString(Object)}.
-     *
+     * Checks if the element string matches the searching text. Different from
+     * {@link #compare(Object, String)}, this method is after the element has been converted to
+     * string using {@link #applyConverter(Object)}.
+     * <p>
      * @param text          the text to be checked
      * @param searchingText the searching text
+     * <p>
      * @return true if matches.
      */
     protected boolean compareAsString(String text, String searchingText) {
@@ -365,8 +396,7 @@ public abstract class Searchable<T> {
 
         if (!isWildcardEnabled()) {
             return (searchingText.equals(text) || searchingText.length() > 0 && (isFromStart() ? text.startsWith(searchingText) : text.contains(searchingText)));
-        }
-        else {
+        } else {
             // use the previous pattern since nothing changed.
             if (_searchText != null && _searchText.equals(searchingText) && _pattern != null) {
                 return _pattern.matcher(text).find();
@@ -382,18 +412,16 @@ public abstract class Searchable<T> {
             try {
                 _pattern = Pattern.compile(isFromStart() ? "^" + s : s, isCaseSensitive() ? 0 : Pattern.CASE_INSENSITIVE);
                 return _pattern.matcher(text).find();
-            }
-            catch (PatternSyntaxException e) {
+            } catch (PatternSyntaxException e) {
                 return false;
             }
         }
     }
 
-
     /**
-     * Gets the cursor which is the index of current location when searching. The value will be used in findNext and
-     * findPrevious.
-     *
+     * Gets the cursor which is the index of current location when searching. The value will be used
+     * in findNext and findPrevious.
+     * <p>
      * @return the current position of the cursor.
      */
     public int getCursor() {
@@ -401,9 +429,9 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Sets the cursor which is the index of current location when searching. The value will be used in findNext and
-     * findPrevious.
-     *
+     * Sets the cursor which is the index of current location when searching. The value will be used
+     * in findNext and findPrevious.
+     * <p>
      * @param cursor the new position of the cursor.
      */
     public void setCursor(int cursor) {
@@ -411,26 +439,37 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Sets the cursor which is the index of current location when searching. The value will be used in findNext and
-     * findPrevious. We will call this method automatically inside this class. However, if you ever call {@link
-     * #setSelectedIndex(int, boolean)} method from your code, you should call this method with the same parameters.
-     *
+     * Sets the cursor which is the index of current location when searching. The value will be used
+     * in findNext and findPrevious. We will call this method automatically inside this class.
+     * However, if you ever call {@link
+     * #setSelectedIndex(int, boolean)} method from your code, you should call this method with the
+     * same parameters.
+     * <p>
      * @param cursor      the new position of the cursor.
-     * @param incremental a flag to enable multiple selection. If the flag is true, the element at the index should be
-     *                    added to current selection. If false, you should clear previous selection and then select the
-     *                    element.
+     * @param incremental a flag to enable multiple selection. If the flag is true, the element at
+     *                    the index should be added to current selection. If false, you should clear
+     *                    previous selection and then select the element.
      */
     public void setCursor(int cursor, boolean incremental) {
-        if (!incremental || _cursor < 0) _selection.clear();
-        if (_cursor >= 0) _selection.add(cursor);
+        if (!incremental || _cursor < 0) {
+            _selection.clear();
+        }
+        if (_cursor >= 0) {
+            _selection.add(cursor);
+        }
         _cursor = cursor;
+    }
+
+    public void setConverter(StringConverter<T> converter) {
+        this.converter = converter;
     }
 
     /**
      * Highlight all matching cases in the target.
      * <p>
-     * In default implementation, it will just search all texts in the target to highlight all. If you have a really
-     * huge text to search, you may want to override this method to have a lazy behavior on visible areas only.
+     * In default implementation, it will just search all texts in the target to highlight all. If
+     * you have a really huge text to search, you may want to override this method to have a lazy
+     * behavior on visible areas only.
      */
     protected void highlightAll() {
         int firstIndex = -1;
@@ -441,8 +480,7 @@ public abstract class Searchable<T> {
             int newIndex = findNext(text);
             if (index == newIndex) {
                 index = -1;
-            }
-            else {
+            } else {
                 index = newIndex;
             }
             if (index != -1) {
@@ -460,7 +498,7 @@ public abstract class Searchable<T> {
 
     /**
      * Select the index for the searching text.
-     *
+     * <p>
      * @param index the start offset
      */
     protected void select(int index) {
@@ -469,8 +507,7 @@ public abstract class Searchable<T> {
             setCursor(index, true);
             setMatchingElement(getElementAt(index));
             setMatchingIndex(index);
-        }
-        else {
+        } else {
             setSelectedIndex(-1, false);
             setMatchingElement(null);
             setMatchingIndex(-1);
@@ -479,27 +516,31 @@ public abstract class Searchable<T> {
 
     /**
      * Finds the next matching index from the cursor.
-     *
+     * <p>
      * @param s the searching text
+     * <p>
      * @return the next index that the element matches the searching text.
      */
     public int findNext(String s) {
         String str = isCaseSensitive() ? s : s.toLowerCase();
         int count = getElementCount();
-        if (count == 0)
+        if (count == 0) {
             return s.length() > 0 ? -1 : 0;
+        }
         int selectedIndex = getCurrentIndex();
         for (int i = selectedIndex + 1; i < count; i++) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
 
         if (isRepeats()) {
             for (int i = 0; i < selectedIndex; i++) {
                 T element = getElementAt(i);
-                if (compare(element, str))
+                if (compare(element, str)) {
                     return i;
+                }
             }
         }
 
@@ -509,8 +550,7 @@ public abstract class Searchable<T> {
     protected int getCurrentIndex() {
         if (_selection.contains(getSelectedIndex())) {
             return _cursor != -1 ? _cursor : getSelectedIndex();
-        }
-        else {
+        } else {
             _selection.clear();
             return getSelectedIndex();
         }
@@ -518,38 +558,43 @@ public abstract class Searchable<T> {
 
     /**
      * Finds the previous matching index from the cursor.
-     *
+     * <p>
      * @param s the searching text
+     * <p>
      * @return the previous index that the element matches the searching text.
      */
     public int findPrevious(String s) {
         String str = isCaseSensitive() ? s : s.toLowerCase();
         int count = getElementCount();
-        if (count == 0)
+        if (count == 0) {
             return s.length() > 0 ? -1 : 0;
+        }
         int selectedIndex = getCurrentIndex();
         for (int i = selectedIndex - 1; i >= 0; i--) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
 
         if (isRepeats()) {
             for (int i = count - 1; i >= selectedIndex; i--) {
                 T element = getElementAt(i);
-                if (compare(element, str))
+                if (compare(element, str)) {
                     return i;
+                }
             }
         }
         return selectedIndex == -1 ? -1 : (compare(getElementAt(selectedIndex), str) ? selectedIndex : -1);
     }
 
     /**
-     * Finds the next matching index from the cursor. If it reaches the end, it will restart from the beginning. However
-     * is the reverseOrder flag is true, it will finds the previous matching index from the cursor. If it reaches the
-     * beginning, it will restart from the end.
-     *
+     * Finds the next matching index from the cursor. If it reaches the end, it will restart from
+     * the beginning. However is the reverseOrder flag is true, it will finds the previous matching
+     * index from the cursor. If it reaches the beginning, it will restart from the end.
+     * <p>
      * @param s the searching text
+     * <p>
      * @return the next index that the element matches the searching text.
      */
     public int findFromCursor(String s) {
@@ -559,33 +604,38 @@ public abstract class Searchable<T> {
 
         String str = isCaseSensitive() ? s : s.toLowerCase();
         int selectedIndex = getCurrentIndex();
-        if (selectedIndex < 0)
+        if (selectedIndex < 0) {
             selectedIndex = 0;
+        }
         int count = getElementCount();
-        if (count == 0)
+        if (count == 0) {
             return -1; // no match
-
+        }
         // find from cursor
         for (int i = selectedIndex; i < count; i++) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
 
         // if not found, start over from the beginning
         for (int i = 0; i < selectedIndex; i++) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
 
         return -1;
     }
 
     /**
-     * Finds the previous matching index from the cursor. If it reaches the beginning, it will restart from the end.
-     *
+     * Finds the previous matching index from the cursor. If it reaches the beginning, it will
+     * restart from the end.
+     * <p>
      * @param s the searching text
+     * <p>
      * @return the next index that the element matches the searching text.
      */
     public int reverseFindFromCursor(String s) {
@@ -595,24 +645,27 @@ public abstract class Searchable<T> {
 
         String str = isCaseSensitive() ? s : s.toLowerCase();
         int selectedIndex = getCurrentIndex();
-        if (selectedIndex < 0)
+        if (selectedIndex < 0) {
             selectedIndex = 0;
+        }
         int count = getElementCount();
-        if (count == 0)
+        if (count == 0) {
             return -1; // no match
-
+        }
         // find from cursor to beginning
         for (int i = selectedIndex; i >= 0; i--) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
 
         // if not found, start over from the end
         for (int i = count - 1; i >= selectedIndex; i--) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
 
         return -1;
@@ -620,21 +673,24 @@ public abstract class Searchable<T> {
 
     /**
      * Finds the first element that matches the searching text.
-     *
+     * <p>
      * @param s the searching text
+     * <p>
      * @return the first element that matches with the searching text.
      */
     public int findFirst(String s) {
         String str = isCaseSensitive() ? s : s.toLowerCase();
         int count = getElementCount();
-        if (count == 0)
+        if (count == 0) {
             return s.length() > 0 ? -1 : 0;
+        }
 
         for (int i = 0; i < count; i++) {
             int index = getIndex(count, i);
             T element = getElementAt(index);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return index;
+            }
         }
 
         return -1;
@@ -642,26 +698,29 @@ public abstract class Searchable<T> {
 
     /**
      * Finds the last element that matches the searching text.
-     *
+     * <p>
      * @param s the searching text
+     * <p>
      * @return the last element that matches the searching text.
      */
     public int findLast(String s) {
         String str = isCaseSensitive() ? s : s.toLowerCase();
         int count = getElementCount();
-        if (count == 0)
+        if (count == 0) {
             return s.length() > 0 ? -1 : 0;
+        }
         for (int i = count - 1; i >= 0; i--) {
             T element = getElementAt(i);
-            if (compare(element, str))
+            if (compare(element, str)) {
                 return i;
+            }
         }
         return -1;
     }
 
     /**
      * This method is called when a key is typed or pressed.
-     *
+     * <p>
      * @param e the KeyEvent.
      */
     protected void keyTypedOrPressed(KeyEvent e) {
@@ -674,8 +733,7 @@ public abstract class Searchable<T> {
             if (e.getCode() != KeyCode.ENTER) {
                 e.consume();
             }
-        }
-        else if (isDeactivateKey(e)) {
+        } else if (isDeactivateKey(e)) {
             hidePopup();
         }
     }
@@ -685,10 +743,11 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Shows the search popup. By default, the search popup will be visible automatically when user types in the first
-     * key (in the case of ListView, TreeView, TableView, ComboBox, ChoiceBox) or types in designated keystroke (in the
-     * case of editable TextInputControl). So this method is only used when you want to show the popup manually.
-     *
+     * Shows the search popup. By default, the search popup will be visible automatically when user
+     * types in the first key (in the case of ListView, TreeView, TableView, ComboBox, ChoiceBox) or
+     * types in designated keystroke (in the case of editable TextInputControl). So this method is
+     * only used when you want to show the popup manually.
+     * <p>
      * @param searchingText the searching text
      */
     public void showPopup(String searchingText) {
@@ -703,7 +762,7 @@ public abstract class Searchable<T> {
 
     /**
      * Creates the popup to hold the searching text.
-     *
+     * <p>
      * @return the searching popup.
      */
     protected SearchPopup createSearchPopup() {
@@ -740,7 +799,9 @@ public abstract class Searchable<T> {
 
     private void updatePopupPosition() {
         Node node = getPopupPositionRelativeTo() != null ? getPopupPositionRelativeTo() : _node;
-        if (_popup == null || node == null) return;
+        if (_popup == null || node == null) {
+            return;
+        }
 
         double w = _popup.prefWidth(-1); // just a random number
         double h = _popup.prefHeight(-1); // just a random number
@@ -781,9 +842,11 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the key is used as a key to find the first occurrence.
-     *
+     * <p>
      * @param e the key event
-     * @return true if the key in KeyEvent is a key to find the first occurrence. By default, home key is used.
+     * <p>
+     * @return true if the key in KeyEvent is a key to find the first occurrence. By default, home
+     *         key is used.
      */
     protected boolean isFindFirstKey(KeyEvent e) {
         return e.getCode() == KeyCode.HOME;
@@ -791,9 +854,11 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the key is used as a key to find the last occurrence.
-     *
+     * <p>
      * @param e the key event
-     * @return true if the key in KeyEvent is a key to find the last occurrence. By default, end key is used.
+     * <p>
+     * @return true if the key in KeyEvent is a key to find the last occurrence. By default, end key
+     *         is used.
      */
     protected boolean isFindLastKey(KeyEvent e) {
         return e.getCode() == KeyCode.END;
@@ -801,9 +866,11 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the key is used as a key to find the previous occurrence.
-     *
+     * <p>
      * @param e the key event
-     * @return true if the key in KeyEvent is a key to find the previous occurrence. By default, up arrow key is used.
+     * <p>
+     * @return true if the key in KeyEvent is a key to find the previous occurrence. By default, up
+     *         arrow key is used.
      */
     protected boolean isFindPreviousKey(KeyEvent e) {
         return e.getCode() == KeyCode.UP;
@@ -811,19 +878,22 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the key is used as a key to find the next occurrence.
-     *
+     * <p>
      * @param e the key event
-     * @return true if the key in KeyEvent is a key to find the next occurrence. By default, down arrow key is used.
+     * <p>
+     * @return true if the key in KeyEvent is a key to find the next occurrence. By default, down
+     *         arrow key is used.
      */
     protected boolean isFindNextKey(KeyEvent e) {
         return e.getCode() == KeyCode.DOWN;
     }
 
     /**
-     * Checks if the key is used as a navigation key. Navigation keys are keys which are used to navigate to other
-     * occurrences of the searching string.
-     *
+     * Checks if the key is used as a navigation key. Navigation keys are keys which are used to
+     * navigate to other occurrences of the searching string.
+     * <p>
      * @param e the key event
+     * <p>
      * @return true if the key in KeyEvent is a navigation key.
      */
     protected boolean isNavigationKey(KeyEvent e) {
@@ -832,33 +902,38 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the key in KeyEvent should activate the search popup.
-     *
+     * <p>
      * @param e the key event
-     * @return true if the KeyEvent is a KEY_PRESSED event and the key code is isLetterKey or isDigitKey.
+     * <p>
+     * @return true if the KeyEvent is a KEY_PRESSED event and the key code is isLetterKey or
+     *         isDigitKey.
      */
     protected boolean isActivateKey(KeyEvent e) {
         return e.getEventType() == KeyEvent.KEY_PRESSED && (e.getCode().isLetterKey() || e.getCode().isDigitKey());
     }
 
     /**
-     * Checks if the key in KeyEvent should hide the search popup. If this method return true and the key is not used
-     * for navigation purpose ({@link #isNavigationKey(KeyEvent)} return false), the popup will be hidden.
-     *
+     * Checks if the key in KeyEvent should hide the search popup. If this method return true and
+     * the key is not used for navigation purpose ({@link #isNavigationKey(KeyEvent)} return false),
+     * the popup will be hidden.
+     * <p>
      * @param e the key event
-     * @return true if the keyCode in the KeyEvent is escape key, enter key, or any of the arrow keys such as page up,
-     *         page down, home, end, left, right, up and down.
+     * <p>
+     * @return true if the keyCode in the KeyEvent is escape key, enter key, or any of the arrow
+     *         keys such as page up, page down, home, end, left, right, up and down.
      */
     protected boolean isDeactivateKey(KeyEvent e) {
         KeyCode keyCode = e.getCode();
         return keyCode == KeyCode.ENTER || keyCode == KeyCode.ESCAPE
-                || keyCode == KeyCode.PAGE_UP || keyCode == KeyCode.PAGE_DOWN
-                || keyCode == KeyCode.HOME || keyCode == KeyCode.END;
+               || keyCode == KeyCode.PAGE_UP || keyCode == KeyCode.PAGE_DOWN
+               || keyCode == KeyCode.HOME || keyCode == KeyCode.END;
     }
 
     /**
      * Checks if the key will trigger selecting all.
-     *
+     * <p>
      * @param e the key event
+     * <p>
      * @return true if the key in KeyEvent is a key to trigger selecting all.
      */
     protected boolean isSelectAllKey(KeyEvent e) {
@@ -867,10 +942,11 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the key will trigger incremental selection.
-     *
+     * <p>
      * @param e the key event
-     * @return true if the key in KeyEvent is a key to trigger incremental selection. By default, ctrl down key is
-     *         used.
+     * <p>
+     * @return true if the key in KeyEvent is a key to trigger incremental selection. By default,
+     *         ctrl down key is used.
      */
     protected boolean isIncrementalSelectKey(KeyEvent e) {
         return e.isControlDown();
@@ -885,7 +961,7 @@ public abstract class Searchable<T> {
 
     /**
      * Checks if the case is sensitive during searching.
-     *
+     * <p>
      * @return true if the searching is case sensitive.
      */
     public boolean isCaseSensitive() {
@@ -894,7 +970,7 @@ public abstract class Searchable<T> {
 
     /**
      * Sets the case sensitive flag. By default, it's false meaning it's a case insensitive search.
-     *
+     * <p>
      * @param caseSensitive the flag if searching is case sensitive
      */
     public void setCaseSensitive(boolean caseSensitive) {
@@ -909,10 +985,11 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * If it returns a positive number, it will wait for that many ms before doing the search. When the searching is
-     * complex, this flag will be useful to make the searching efficient. In the other words, if user types in several
-     * keys very quickly, there will be only one search. If it returns Duration.ZERO, each key will generate a search.
-     *
+     * If it returns a positive number, it will wait for that many ms before doing the search. When
+     * the searching is complex, this flag will be useful to make the searching efficient. In the
+     * other words, if user types in several keys very quickly, there will be only one search. If it
+     * returns Duration.ZERO, each key will generate a search.
+     * <p>
      * @return the delay before searching starts.
      */
     public Duration getSearchingDelay() {
@@ -920,17 +997,16 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * If this flag is set to Duration, it will wait for that many ms before doing the search. When the searching is
-     * complex, this flag will be useful to make the searching efficient. In the other words, if user types in several
-     * keys very quickly, there will be only one search. If this flag is set to Duration.ZERO, each key will generate a
-     * search with no delay.
-     *
+     * If this flag is set to Duration, it will wait for that many ms before doing the search. When
+     * the searching is complex, this flag will be useful to make the searching efficient. In the
+     * other words, if user types in several keys very quickly, there will be only one search. If
+     * this flag is set to Duration.ZERO, each key will generate a search with no delay.
+     * <p>
      * @param searchingDelay the delay before searching start.
      */
     public void setSearchingDelay(Duration searchingDelay) {
         searchingDelayProperty().set(searchingDelay);
     }
-
 
     public BooleanProperty repeatsProperty() {
         if (_repeatsProperty == null) {
@@ -940,9 +1016,9 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Checks if restart from the beginning when searching reaches the end or restart from the end when reaches
-     * beginning. Default is false.
-     *
+     * Checks if restart from the beginning when searching reaches the end or restart from the end
+     * when reaches beginning. Default is false.
+     * <p>
      * @return true or false.
      */
     public boolean isRepeats() {
@@ -950,9 +1026,9 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Sets the repeat flag. By default, it's false meaning it will stop searching when reaching the end or reaching the
-     * beginning.
-     *
+     * Sets the repeat flag. By default, it's false meaning it will stop searching when reaching the
+     * end or reaching the beginning.
+     * <p>
      * @param repeats the repeat flag
      */
     public void setRepeats(boolean repeats) {
@@ -967,9 +1043,10 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Checks if it supports wildcard in searching text. By default it is true which means user can type in "*" or "?"
-     * to match with any characters or any character. If it's false, it will treat "*" or "?" as a regular character.
-     *
+     * Checks if it supports wildcard in searching text. By default it is true which means user can
+     * type in "*" or "?" to match with any characters or any character. If it's false, it will
+     * treat "*" or "?" as a regular character.
+     * <p>
      * @return true if it supports wildcard.
      */
     public boolean isWildcardEnabled() {
@@ -978,8 +1055,9 @@ public abstract class Searchable<T> {
 
     /**
      * Enable or disable the usage of wildcard.
-     *
+     * <p>
      * @param wildcardEnabled the flag if wildcard is enabled
+     * <p>
      * @see #isWildcardEnabled()
      */
     public void setWildcardEnabled(Boolean wildcardEnabled) {
@@ -988,20 +1066,22 @@ public abstract class Searchable<T> {
 
     /**
      * Gets the WildcardSupport. If user never sets it, {@link WildcardSupport} will be used.
-     *
+     * <p>
      * @return the WildcardSupport.
      */
     public WildcardSupport getWildcardSupport() {
         if (_wildcardSupport == null) {
-            _wildcardSupport = new WildcardSupport() {};
+            _wildcardSupport = new WildcardSupport() {
+            };
         }
         return _wildcardSupport;
     }
 
     /**
-     * Sets the WildcardSupport. This class allows you to define what wildcards to use and how to convert the wildcard
-     * strings to a regular expression string which is eventually used to search.
-     *
+     * Sets the WildcardSupport. This class allows you to define what wildcards to use and how to
+     * convert the wildcard strings to a regular expression string which is eventually used to
+     * search.
+     * <p>
      * @param wildcardSupport the new WildCardSupport.
      */
     public void setWildcardSupport(WildcardSupport wildcardSupport) {
@@ -1017,7 +1097,7 @@ public abstract class Searchable<T> {
 
     /**
      * Gets the current text that appears in the search popup. By default it is "Search for: ".
-     *
+     * <p>
      * @return the text that appears in the search popup.
      */
     public String getSearchLabel() {
@@ -1026,7 +1106,7 @@ public abstract class Searchable<T> {
 
     /**
      * Sets the text that appears in the search popup.
-     *
+     * <p>
      * @param searchLabel the search label
      */
     public void setSearchLabel(String searchLabel) {
@@ -1035,7 +1115,7 @@ public abstract class Searchable<T> {
 
     /**
      * Gets the actual node which installed this Searchable.
-     *
+     * <p>
      * @return the actual node which installed this Searchable.
      */
     public Node getNode() {
@@ -1058,9 +1138,9 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Gets the popup position. The valid values are defined in {@link Pos}. We currently only support TOP_XXX and
-     * BOTTOM_XXX total six positions.
-     *
+     * Gets the popup position. The valid values are defined in {@link Pos}. We currently only
+     * support TOP_XXX and BOTTOM_XXX total six positions.
+     * <p>
      * @return the popup position.
      */
     public Pos getPopupPosition() {
@@ -1069,9 +1149,9 @@ public abstract class Searchable<T> {
 
     /**
      * Sets the popup position.
-     *
-     * @param popupPosition the popup location. The valid values are defined in {@link Pos}. We currently only support
-     *                      TOP_XXX and BOTTOM_XXX total six positions.
+     * <p>
+     * @param popupPosition the popup location. The valid values are defined in {@link Pos}. We
+     *                      currently only support TOP_XXX and BOTTOM_XXX total six positions.
      */
     public void setPopupPosition(Pos popupPosition) {
         popupPositionProperty().set(popupPosition);
@@ -1086,7 +1166,7 @@ public abstract class Searchable<T> {
 
     /**
      * Gets the node that the position of the popup relative to.
-     *
+     * <p>
      * @return the control that the position of the popup relative to.
      */
     public Node getPopupPositionRelativeTo() {
@@ -1095,15 +1175,14 @@ public abstract class Searchable<T> {
 
     /**
      * Sets the position of the popup relative to the specified node. Then based on the value of {@link
-     * #getPopupPosition()}. If you never set, we will use the searchable node or its scroll pane (if exists) as the
-     * popupPositionRelativeTo Node.
-     *
+     * #getPopupPosition()}. If you never set, we will use the searchable node or its scroll pane
+     * (if exists) as the popupPositionRelativeTo Node.
+     * <p>
      * @param popupPositionRelativeTo the relative node
      */
     public void setPopupPositionRelativeTo(Node popupPositionRelativeTo) {
         popupPositionRelativeToProperty().set(popupPositionRelativeTo);
     }
-
 
     private void updateText(String newValue) {
         if (_popup != null) {
@@ -1152,8 +1231,7 @@ public abstract class Searchable<T> {
                     if (text.length() != 0) {
                         int found = findFromCursor(text);
                         select(found, null);
-                    }
-                    else {
+                    } else {
                         hidePopup();
                     }
                 }
@@ -1164,13 +1242,11 @@ public abstract class Searchable<T> {
                         if (timer.getStatus() == Animation.Status.RUNNING) {
                             timer.stop();
                             timer.play();
-                        }
-                        else {
+                        } else {
                             timer.setCycleCount(1);
                             timer.play();
                         }
-                    }
-                    else {
+                    } else {
                         applyText();
                     }
                 }
@@ -1202,7 +1278,6 @@ public abstract class Searchable<T> {
         searchingProperty().set(searching);
     }
 
-
     public IntegerProperty matchingIndexProperty() {
         if (_matchingIndexProperty == null) {
             _matchingIndexProperty = new SimpleIntegerProperty();
@@ -1217,7 +1292,6 @@ public abstract class Searchable<T> {
     public void setMatchingIndex(int matchingIndex) {
         matchingIndexProperty().set(matchingIndex);
     }
-
 
     public ObjectProperty<T> matchingElementProperty() {
         if (_matchingElementProperty == null) {
@@ -1261,20 +1335,17 @@ public abstract class Searchable<T> {
                     select(found, e);
                     e.consume();
                     return;
-                }
-                else if (isFindNextKey(e)) {
+                } else if (isFindNextKey(e)) {
                     found = findNext(text);
                     select(found, e);
                     e.consume();
                     return;
-                }
-                else if (isFindFirstKey(e)) {
+                } else if (isFindFirstKey(e)) {
                     found = findFirst(text);
                     select(found, e);
                     e.consume();
                     return;
-                }
-                else if (isFindLastKey(e)) {
+                } else if (isFindLastKey(e)) {
                     found = findLast(text);
                     select(found, e);
                     e.consume();
@@ -1286,14 +1357,11 @@ public abstract class Searchable<T> {
             if (e.getEventType() == KeyEvent.KEY_PRESSED) {
                 if (e.getCode() == KeyCode.DELETE) {
                     newText = text.substring(1);
-                }
-                else if (e.getCode() == KeyCode.BACK_SPACE) {
-                    newText = text.substring(0, Math.max(0,text.length() - 1));
-                }
-                else if (!e.isAltDown() && !e.isControlDown() && !e.isMetaDown()) {
+                } else if (e.getCode() == KeyCode.BACK_SPACE) {
+                    newText = text.substring(0, Math.max(0, text.length() - 1));
+                } else if (!e.isAltDown() && !e.isControlDown() && !e.isMetaDown()) {
                     newText = text.concat(e.getText());
-                }
-                else {
+                } else {
                     newText = text;
                 }
                 setTypedText(newText);
@@ -1312,7 +1380,6 @@ public abstract class Searchable<T> {
                 Searchable.this.setCursor(index); // as setSelectedIndex is used directly, we have to manually set the cursor value.
             }
 
-
             boolean oldRepeats = isRepeats(); // set repeats to false and set it back later.
             if (oldRepeats) {
                 setRepeats(false);
@@ -1322,8 +1389,7 @@ public abstract class Searchable<T> {
                 int newIndex = findNext(text);
                 if (index == newIndex) {
                     index = -1;
-                }
-                else {
+                } else {
                     index = newIndex;
                 }
                 if (index == -1) {
@@ -1345,9 +1411,9 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Checks the searching order. By default the searchable starts searching from top to bottom. If this flag is false,
-     * it searches from bottom to top.
-     *
+     * Checks the searching order. By default the searchable starts searching from top to bottom. If
+     * this flag is false, it searches from bottom to top.
+     * <p>
      * @return the reverseOrder flag.
      */
     public boolean isReverseOrder() {
@@ -1355,9 +1421,9 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Sets the searching order. By default the searchable starts searching from top to bottom. If this flag is false,
-     * it searches from bottom to top.
-     *
+     * Sets the searching order. By default the searchable starts searching from top to bottom. If
+     * this flag is false, it searches from bottom to top.
+     * <p>
      * @param reverseOrder the flag if searching from top to bottom or from bottom to top
      */
     public void setReverseOrder(boolean reverseOrder) {
@@ -1365,10 +1431,11 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Gets the localized string from resource bundle. Subclass can override it to provide its own string. Available
-     * keys are defined in swing.properties that begin with "Searchable.".
-     *
+     * Gets the localized string from resource bundle. Subclass can override it to provide its own
+     * string. Available keys are defined in swing.properties that begin with "Searchable.".
+     * <p>
      * @param key the resource string key
+     * <p>
      * @return the localized string.
      */
     protected String getResourceString(String key) {
@@ -1377,7 +1444,7 @@ public abstract class Searchable<T> {
 
     /**
      * Check if the searchable popup is visible.
-     *
+     * <p>
      * @return true if visible. Otherwise, false.
      */
     public boolean isPopupVisible() {
@@ -1399,9 +1466,9 @@ public abstract class Searchable<T> {
 
     /**
      * This is a property of how to compare searching text with the data. If it is true, it will use {@link
-     * String#startsWith(String)} to do the comparison. Otherwise, it will use {@link String#indexOf(String)} to do the
-     * comparison.
-     *
+     * String#startsWith(String)} to do the comparison. Otherwise, it will use
+     * {@link String#indexOf(String)} to do the comparison.
+     * <p>
      * @return true or false.
      */
     public boolean isFromStart() {
@@ -1410,10 +1477,10 @@ public abstract class Searchable<T> {
 
     /**
      * Sets the fromStart property.
-     *
-     * @param fromStart true if the comparison matches from the start of the text only. Otherwise false. The difference
-     *                  is if true, it will use String's {@code startWith} method to match. If false, it will use
-     *                  {@code contains} method.
+     * <p>
+     * @param fromStart true if the comparison matches from the start of the text only. Otherwise
+     *                  false. The difference is if true, it will use String's {@code startWith}
+     *                  method to match. If false, it will use {@code contains} method.
      */
     public void setFromStart(boolean fromStart) {
         fromStartProperty().set(fromStart);
@@ -1421,16 +1488,16 @@ public abstract class Searchable<T> {
 
     /**
      * Gets the Searchable installed on the node. Null is no Searchable was installed.
-     *
+     * <p>
      * @param node the node
+     * <p>
      * @return the Searchable installed. Null is no Searchable was installed.
      */
     public static Searchable getSearchable(Node node) {
         Object property = node.getProperties().get(PROPERTY_SEARCHABLE);
         if (property instanceof Searchable) {
             return ((Searchable) property);
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -1447,8 +1514,9 @@ public abstract class Searchable<T> {
 
     /**
      * Gets the duration before hiding the popup.
-     *
+     * <p>
      * @return the popup timeout.
+     * <p>
      * @see #setHidePopupDelay(Duration)
      */
     public Duration getHidePopupDelay() {
@@ -1458,10 +1526,10 @@ public abstract class Searchable<T> {
     /**
      * Sets the delay before hiding the popup.
      * <p>
-     * By default, the delay value is Duration.INDEFINITE, which means the hide popup will not be hidden unless users
-     * press ESCAPE key. You could set it to a positive value to automatically hide the search popup after an idle
-     * time.
-     *
+     * By default, the delay value is Duration.INDEFINITE, which means the hide popup will not be
+     * hidden unless users press ESCAPE key. You could set it to a positive value to automatically
+     * hide the search popup after an idle time.
+     * <p>
      * @param hidePopupDelay the delay in Duration
      */
     public void setHidePopupDelay(Duration hidePopupDelay) {
@@ -1480,8 +1548,7 @@ public abstract class Searchable<T> {
             }));
             _hidePopupTimer.setCycleCount(1);
             _hidePopupTimer.play();
-        }
-        else if (_hidePopupTimer != null && _hidePopupTimer.getStatus() == Animation.Status.RUNNING) {
+        } else if (_hidePopupTimer != null && _hidePopupTimer.getStatus() == Animation.Status.RUNNING) {
             _hidePopupTimer.stop();
             _hidePopupTimer.play();
         }
@@ -1495,9 +1562,11 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * {@code findAll} uses the Searchable to find all the element indices that match the searching string.
-     *
+     * {@code findAll} uses the Searchable to find all the element indices that match the searching
+     * string.
+     * <p>
      * @param s the searching string.
+     * <p>
      * @return the list of indices.
      */
     public java.util.List<Integer> findAll(String s) {
@@ -1513,12 +1582,24 @@ public abstract class Searchable<T> {
     }
 
     /**
-     * Gets the element at the specified index as string using {@link #convertElementToString(Object)} method.
-     *
+     * Gets the element at the specified index as string using
+     * {@link #applyConverter(Object)} method.
+     * <p>
      * @param index the index.
+     * <p>
      * @return the element at the index converted to string.
      */
     public String getElementAtAsString(int index) {
-        return convertElementToString(getElementAt(index));
+        return applyConverter(getElementAt(index));
+    }
+
+    private String applyConverter(T element) {
+        String text;
+        if (converter != null) {
+            text = converter.toString(element);
+        } else {
+            text = CONVERTER_DEFAULT.toString(element);
+        }
+        return text != null ? text : "";
     }
 }
